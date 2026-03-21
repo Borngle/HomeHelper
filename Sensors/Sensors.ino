@@ -1,33 +1,43 @@
 #include <LiquidCrystal_I2C.h>
 #include "DHT.h"
 #include "BH1750.h"
+#include "WiFi.h"
+#include "config.h"
 
+// DHT
 #define DHT_PIN 16
 #define DHT_TYPE DHT22
-
-#define LED 15
-#define PIR_PIN 0
-
-// Separate I2C bus
-#define BH1750_SCL 13 // Clock
-#define BH1750_SDA 12 // Data
-
-LiquidCrystal_I2C lcd(0x27, 16, 2); 
 DHT dht(DHT_PIN, DHT_TYPE);
-BH1750 bh1750;
 
+// LCD
+LiquidCrystal_I2C lcd(0x27, 16, 2); 
 int currentScreen = 0;
 unsigned long lastSwitch = 0; // Timestamp at moment of screen switch
 const unsigned long INTERVAL = 2000;
 bool draw = true; // Only draw on screen change to avoid flickering/corruption
 
+// BH1750
+// Separate I2C bus
+#define BH1750_SCL 13 // Clock
+#define BH1750_SDA 12 // Data
+BH1750 bh1750;
+
+// PIR
+#define LED 15
+#define PIR_PIN 0
 const unsigned long PIR_WAIT = 60000;
 unsigned long lastMotion = 0; // Timestamp at moment of real motion detected
 const unsigned long MOTION_HOLD = 2000; // How long light remains on after last motion
 unsigned long motionStart = 0; // Timestamp when pin goes HIGH
 const unsigned long MOTION_CONFIRM = 200; // Must be HIGH for this long to be considered real
 
+// WiFi
+WiFiServer server(80); // Listening on port 80 (HTTP)
+const char* ssid = WIFI_SSID;
+const char* password = WIFI_PASSWORD;
+
 void setup() {
+  Serial.begin(115200);
   // LCD on Wire
   Wire.begin();
   if (!i2CAddrTest(0x27)) {
@@ -49,8 +59,13 @@ void setup() {
   dht.begin();
   pinMode(PIR_PIN, INPUT);
   pinMode(LED, OUTPUT);
-  Serial.begin(115200);
   lastSwitch = millis();
+  WiFi.begin(ssid, password); // Connects to router
+  while(WiFi.status() != WL_CONNECTED) { // Blocks until connection
+    delay(500);
+  }
+  Serial.println("Connected to IP " + WiFi.localIP().toString());
+  server.begin(); // Listens to TCP connections
 }
 
 void loop() {
@@ -68,15 +83,15 @@ void loop() {
     Serial.println("Failed to read from DHT sensor");
     return;
   }
-  float heatIndex = dht.computeHeatIndex(temperature, humidity, false);
+  //float heatIndex = dht.computeHeatIndex(temperature, humidity, false);
   // BH1750
   float lux = -1;
   if(bh1750.measurementReady()) {
     //lux = bh1750.readLightLevel();
   }
   // HC-SR501 PIR
+  int motion = digitalRead(PIR_PIN);
   if (now >= PIR_WAIT) {
-    int motion = digitalRead(PIR_PIN);
     if (motion == HIGH) {
       if (motionStart == 0) {
         motionStart = now;
@@ -120,6 +135,32 @@ void loop() {
     }
     draw = false;
   }
+  // Check if any client (would be Android application) connected
+  WiFiClient client = server.available();
+  if(!client) {
+    return;
+  }
+  while(client.available() == 0) { // Wait for client to send HTTP request
+    if(millis() - now > 3000) { // Timeout
+      client.stop();
+      return;
+    }
+  }
+  while(client.available()) { // Read and discard HTTP request (only need to send sensor data)
+    client.read();
+  }
+  String json = "{";
+  json += "\"temperature\":" + String(temperature, 1) + ",";
+  json += "\"humidity\":" + String(humidity, 1) + ",";
+  json += "\"lux\":" + String(lux, 1) + ",";
+  json += "\"motion\":" + String(motion == HIGH ? "true" : "false") + "}";
+  // HTTP response
+  client.println("HTTP/1.1 200 OK");
+  client.println("Content-Type: application/json");
+  client.println("Connection: close");
+  client.println(); // Separates headers from body
+  client.println(json);
+  client.stop();
   delay(100);
 }
 
