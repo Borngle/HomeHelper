@@ -5,11 +5,14 @@
 #define DHTPIN 16
 #define DHTTYPE DHT22
 
-// Separate I2C bus
-#define BH1750_SCL 15 // Clock
-#define BH1750_SDA 14 // Data
+#define LED 15
+#define PIRPIN 0
 
-LiquidCrystal_I2C lcd(0x27,16,2); 
+// Separate I2C bus
+#define BH1750_SCL 13 // Clock
+#define BH1750_SDA 12 // Data
+
+LiquidCrystal_I2C lcd(0x27, 16, 2); 
 DHT dht(DHTPIN, DHTTYPE);
 BH1750 bh1750;
 
@@ -36,6 +39,8 @@ void setup() {
   }
   lcd.setCursor(0,0);
   dht.begin();
+  pinMode(PIRPIN, INPUT);
+  pinMode(LED, OUTPUT);
   Serial.begin(115200);
   lastSwitch = millis();
 }
@@ -59,7 +64,17 @@ void loop() {
   // BH1750
   float lux = -1;
   if(bh1750.measurementReady()) {
-    lux = bh1750.readLightLevel();
+    //lux = bh1750.readLightLevel();
+  }
+  // HC-SR501 PIR
+  int motion = digitalRead(PIRPIN); 
+  if(motion == HIGH) {
+    Serial.println("High");
+    digitalWrite(LED, HIGH);
+  }
+  else {
+    Serial.println("Low");
+    digitalWrite(LED, LOW);
   }
   // LCD
   if(draw) {
