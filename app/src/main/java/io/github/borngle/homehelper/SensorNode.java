@@ -1,5 +1,6 @@
-package io.github.borngle.homehelper.model;
+package io.github.borngle.homehelper;
 
+// Model class
 public class SensorNode {
     private String room;
     private String url;

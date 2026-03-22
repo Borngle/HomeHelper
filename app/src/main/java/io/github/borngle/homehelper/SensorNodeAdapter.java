@@ -1,18 +1,18 @@
-package io.github.borngle.homehelper.adapter;
+package io.github.borngle.homehelper;
 
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 import androidx.recyclerview.widget.RecyclerView;
-import java.util.List;
-import io.github.borngle.homehelper.R;
-import io.github.borngle.homehelper.model.SensorNode;
 
+import java.util.ArrayList;
+
+// Adapter class
 public class SensorNodeAdapter extends RecyclerView.Adapter<SensorNodeAdapter.SensorNodeViewHolder> {
-    private List<SensorNode> sensorNodes;
+    private ArrayList<SensorNode> sensorNodes;
 
-    public SensorNodeAdapter(List<SensorNode> sensorNodes) {
+    public SensorNodeAdapter(ArrayList<SensorNode> sensorNodes) {
         this.sensorNodes = sensorNodes;
     }
 
