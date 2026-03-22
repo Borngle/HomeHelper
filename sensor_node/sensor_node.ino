@@ -36,14 +36,14 @@ WiFiServer server(80); // Listening on port 80 (HTTP)
 const char* ssid = WIFI_SSID;
 const char* password = WIFI_PASSWORD;
 byte connected[8] = {
-  0b00000,
-  0b1110,
+  0b01110,
   0b10001,
   0b00000,
   0b00100,
   0b01010,
   0b00000,
   0b00100,
+  0b00000,
 };
 
 void setup() {
