@@ -1,4 +1,4 @@
-package com.example.homehelper;
+package io.github.borngle.homehelper;
 
 import android.os.Bundle;
 
