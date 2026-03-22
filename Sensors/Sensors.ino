@@ -60,11 +60,15 @@ void setup() {
   pinMode(PIR_PIN, INPUT);
   pinMode(LED, OUTPUT);
   lastSwitch = millis();
+  WiFi.mode(WIFI_STA); // WiFi station mode
   WiFi.begin(ssid, password); // Connects to router
   while(WiFi.status() != WL_CONNECTED) { // Blocks until connection
     delay(500);
   }
-  Serial.println("Connected to IP " + WiFi.localIP().toString());
+  Serial.print("Raspberry Pi Pico W is connected to WiFi network: ");
+  Serial.println(WiFi.SSID());
+  Serial.print("Assigned IP Address: ");
+  Serial.println(WiFi.localIP());
   server.begin(); // Listens to TCP connections
 }
 
