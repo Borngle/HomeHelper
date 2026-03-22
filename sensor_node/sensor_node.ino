@@ -35,6 +35,16 @@ const unsigned long MOTION_CONFIRM = 200; // Must be HIGH for this long to be co
 WiFiServer server(80); // Listening on port 80 (HTTP)
 const char* ssid = WIFI_SSID;
 const char* password = WIFI_PASSWORD;
+byte connected[8] = {
+  0b00000,
+  0b1110,
+  0b10001,
+  0b00000,
+  0b00100,
+  0b01010,
+  0b00000,
+  0b00100,
+};
 
 void setup() {
   Serial.begin(115200);
@@ -44,6 +54,7 @@ void setup() {
     lcd = LiquidCrystal_I2C(0x3F, 16, 2);
   }
   lcd.init();
+  lcd.createChar(0, connected);
   lcd.backlight();
   lcd.clear();
   // BH1750 on Wire1 to avoid address conflicts with Wire
@@ -62,13 +73,6 @@ void setup() {
   lastSwitch = millis();
   WiFi.mode(WIFI_STA); // WiFi station mode
   WiFi.begin(ssid, password); // Connects to router
-  while(WiFi.status() != WL_CONNECTED) { // Blocks until connection
-    delay(500);
-  }
-  Serial.print("Raspberry Pi Pico W is connected to WiFi network: ");
-  Serial.println(WiFi.SSID());
-  Serial.print("Assigned IP Address: ");
-  Serial.println(WiFi.localIP());
   server.begin(); // Listens to TCP connections
 }
 
@@ -83,7 +87,7 @@ void loop() {
   // DHT22
   float humidity = dht.readHumidity();
   float temperature = dht.readTemperature();
-  if (isnan(humidity) || isnan(temperature)) {
+  if(isnan(humidity) || isnan(temperature)) {
     Serial.println("Failed to read from DHT sensor");
     return;
   }
@@ -95,12 +99,12 @@ void loop() {
   }
   // HC-SR501 PIR
   int motion = digitalRead(PIR_PIN);
-  if (now >= PIR_WAIT) {
-    if (motion == HIGH) {
-      if (motionStart == 0) {
+  if(now >= PIR_WAIT) {
+    if(motion == HIGH) {
+      if(motionStart == 0) {
         motionStart = now;
       }
-      if (now - motionStart >= MOTION_CONFIRM) { // HIGH for long enough to be real motion
+      if(now - motionStart >= MOTION_CONFIRM) { // HIGH for long enough to be real motion
         lastMotion = now;
         Serial.println("Motion detected");
         digitalWrite(LED, HIGH);
@@ -108,7 +112,7 @@ void loop() {
     } 
     else {
       motionStart = 0;
-      if (now - lastMotion > MOTION_HOLD) { // Turns off LED after hold period
+      if(now - lastMotion > MOTION_HOLD) { // Turns off LED after hold period
         Serial.println("No motion detected");
         digitalWrite(LED, LOW);
       }
@@ -137,41 +141,47 @@ void loop() {
         lcd.print("%");
         break;
     }
+    if(WiFi.status() == WL_CONNECTED) {
+      lcd.setCursor(15, 0);
+      lcd.write(byte(0));
+    }
     draw = false;
   }
-  // Check if any client (would be Android application) connected
-  WiFiClient client = server.available();
-  if(!client) {
-    return;
-  }
-  while(client.available() == 0) { // Wait for client to send HTTP request
-    if(millis() - now > 3000) { // Timeout
-      client.stop();
+  if(WiFi.status() == WL_CONNECTED) {
+    // Check if any client (would be Android application) connected
+    WiFiClient client = server.accept();
+    if(!client) {
       return;
     }
+    while(client.available() == 0) { // Wait for client to send HTTP request
+      if(millis() - now > 3000) { // Timeout
+        client.stop();
+        return;
+      }
+    }
+    while(client.available()) { // Read and discard HTTP request (only need to send sensor data)
+      client.read();
+    }
+    String json = "{";
+    json += "\"temperature\":" + String(temperature, 1) + ",";
+    json += "\"humidity\":" + String(humidity, 1) + ",";
+    json += "\"lux\":" + String(lux, 1) + ",";
+    json += "\"motion\":" + String(motion == HIGH ? "true" : "false") + "}";
+    // HTTP response
+    client.println("HTTP/1.1 200 OK");
+    client.println("Content-Type: application/json");
+    client.println("Connection: close");
+    client.println(); // Separates headers from body
+    client.println(json);
+    client.stop();
   }
-  while(client.available()) { // Read and discard HTTP request (only need to send sensor data)
-    client.read();
-  }
-  String json = "{";
-  json += "\"temperature\":" + String(temperature, 1) + ",";
-  json += "\"humidity\":" + String(humidity, 1) + ",";
-  json += "\"lux\":" + String(lux, 1) + ",";
-  json += "\"motion\":" + String(motion == HIGH ? "true" : "false") + "}";
-  // HTTP response
-  client.println("HTTP/1.1 200 OK");
-  client.println("Content-Type: application/json");
-  client.println("Connection: close");
-  client.println(); // Separates headers from body
-  client.println(json);
-  client.stop();
   delay(100);
 }
 
 bool i2CAddrTest(uint8_t addr) {
   Wire.begin();
   Wire.beginTransmission(addr);
-  if (Wire.endTransmission() == 0) {
+  if(Wire.endTransmission() == 0) {
     return true;
   }
   return false;
