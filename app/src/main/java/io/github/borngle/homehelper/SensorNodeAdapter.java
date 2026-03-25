@@ -35,6 +35,8 @@ public class SensorNodeAdapter extends RecyclerView.Adapter<SensorNodeAdapter.Se
         // Create a new view, which defines the UI of the list item
         View sensorNodeView = LayoutInflater.from(viewGroup.getContext()) // Builds view from XML
                 .inflate(R.layout.sensor_node, viewGroup, false);
+        int screenHeight = viewGroup.getResources().getDisplayMetrics().heightPixels;
+        sensorNodeView.getLayoutParams().height = screenHeight / 3;
         return new SensorNodeViewHolder(sensorNodeView);
     }
 
@@ -45,7 +47,7 @@ public class SensorNodeAdapter extends RecyclerView.Adapter<SensorNodeAdapter.Se
         sensorNodeViewHolder.roomText.setText(sensorNode.getRoom());
         sensorNodeViewHolder.temperatureText.setText(sensorNode.getTemperature() + "°C");
         sensorNodeViewHolder.humidityText.setText(sensorNode.getHumidity() + "%");
-        sensorNodeViewHolder.motionText.setText(sensorNode.isMotion() ? "Motion detected" : "No motion detected");
+        sensorNodeViewHolder.motionText.setText(sensorNode.isMotion() ? "Room occupied" : "Empty room");
     }
 
     // Return the number of nodes (invoked by the layout manager)

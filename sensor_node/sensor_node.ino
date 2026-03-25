@@ -144,6 +144,7 @@ void loop() {
     if(WiFi.status() == WL_CONNECTED) {
       lcd.setCursor(15, 0);
       lcd.write(byte(0));
+      Serial.println(WiFi.localIP());
     }
     draw = false;
   }

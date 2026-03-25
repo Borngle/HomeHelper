@@ -50,4 +50,24 @@ public class SensorNode {
     public void setUrl(String url) {
         this.url = url;
     }
+
+    public void setTemperature(float temperature) {
+        this.temperature = temperature;
+    }
+
+    public void setHumidity(float humidity) {
+        this.humidity = humidity;
+    }
+
+    public void setLux(float lux) {
+        this.lux = lux;
+    }
+
+    public void setMotion(boolean motion) {
+        this.motion = motion;
+    }
+
+    public void setReachable(boolean reachable) {
+        this.reachable = reachable;
+    }
 }
