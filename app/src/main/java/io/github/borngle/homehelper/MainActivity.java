@@ -44,7 +44,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void run() {
                 poller.pollAll();
-                handler.postDelayed(this, 5000);
+                handler.postDelayed(this, 2000);
             }
         };
         handler.post(pollRunnable);

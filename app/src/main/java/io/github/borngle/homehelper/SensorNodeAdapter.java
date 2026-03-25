@@ -45,8 +45,8 @@ public class SensorNodeAdapter extends RecyclerView.Adapter<SensorNodeAdapter.Se
     public void onBindViewHolder(SensorNodeViewHolder sensorNodeViewHolder, int position) {
         SensorNode sensorNode = sensorNodes.get(position);
         sensorNodeViewHolder.roomText.setText(sensorNode.getRoom());
-        sensorNodeViewHolder.temperatureText.setText(sensorNode.getTemperature() + "°C");
-        sensorNodeViewHolder.humidityText.setText(sensorNode.getHumidity() + "%");
+        sensorNodeViewHolder.temperatureText.setText("Temperature: " + sensorNode.getTemperature() + "°C");
+        sensorNodeViewHolder.humidityText.setText("Humidity: " + sensorNode.getHumidity() + "%");
         sensorNodeViewHolder.motionText.setText(sensorNode.isMotion() ? "Room occupied" : "Empty room");
     }
 
