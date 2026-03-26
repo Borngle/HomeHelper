@@ -20,7 +20,10 @@ public class SensorNode {
     }
 
     public String getUrl() {
-        return url;
+        if (this.url == null || this.url.isEmpty()) {
+            return null;
+        }
+        return "http://" + this.url;
     }
 
     public float getTemperature() {

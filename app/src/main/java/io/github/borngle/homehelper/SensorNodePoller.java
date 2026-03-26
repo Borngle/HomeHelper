@@ -32,6 +32,10 @@ public class SensorNodePoller {
 
     public void pollNode(int position) {
         SensorNode sensorNode = sensorNodes.get(position);
+        String url = sensorNode.getUrl();
+        if (url == null || url.isEmpty()) {
+            return;
+        }
         Request get = new Request.Builder()
                 .url(sensorNode.getUrl())
                 .build();
