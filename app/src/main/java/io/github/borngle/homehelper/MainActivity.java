@@ -34,8 +34,12 @@ public class MainActivity extends AppCompatActivity {
         MaterialToolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         // Test node
-        sensorNodes = new ArrayList<>();
-        sensorNodes.add(new SensorNode("Living Room", null));
+        SensorNodeRepository sensorNodeRepository = new SensorNodeRepository(this);
+        sensorNodes = sensorNodeRepository.loadSensorNodes();
+        if (sensorNodes.isEmpty()) { // Just for testing
+            sensorNodes.add(new SensorNode("Living Room", null));
+            sensorNodeRepository.saveSensorNodes(sensorNodes);
+        }
         adapter = new SensorNodeAdapter(sensorNodes);
         recyclerView = findViewById(R.id.recyclerView);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
