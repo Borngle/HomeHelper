@@ -23,7 +23,7 @@ public class SensorNode {
         if (this.url == null || this.url.isEmpty()) {
             return null;
         }
-        return "http://" + this.url;
+        return this.url;
     }
 
     public float getTemperature() {

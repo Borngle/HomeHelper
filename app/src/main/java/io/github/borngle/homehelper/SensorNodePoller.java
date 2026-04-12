@@ -10,10 +10,15 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.concurrent.TimeUnit;
+
 import okhttp3.*;
 
 public class SensorNodePoller {
-    private final OkHttpClient client = new OkHttpClient();
+    private final OkHttpClient client = new OkHttpClient.Builder()
+            .connectTimeout(3, TimeUnit.SECONDS) // Fails if no connection
+            .readTimeout(3, TimeUnit.SECONDS) // Fails if connected but no response
+            .build();
     private final ArrayList<SensorNode> sensorNodes;
     private final SensorNodeAdapter adapter;
     private final Handler mainHandler;
@@ -43,7 +48,7 @@ public class SensorNodePoller {
             @Override
             public void onFailure(@NonNull Call call, @NonNull IOException e) {
                 sensorNode.setReachable(false);
-                adapter.updateSensorNode(position);
+                mainHandler.post(() -> adapter.updateSensorNode(position));
             }
 
             @Override

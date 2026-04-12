@@ -48,7 +48,7 @@ public class SensorNodeRepository {
                 jsonObject.put("url", sensorNodes.get(i).getUrl());
                 jsonArray.put(jsonObject);
             }
-            sharedPreferences.edit().putString("nodes", jsonArray.toString());
+            sharedPreferences.edit().putString("nodes", jsonArray.toString()).apply();
         }
         catch (JSONException e) {
             e.printStackTrace();
