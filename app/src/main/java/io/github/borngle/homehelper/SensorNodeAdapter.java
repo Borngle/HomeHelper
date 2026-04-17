@@ -6,11 +6,23 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.material.button.MaterialButton;
+
 import java.util.ArrayList;
 
 // Adapter class
 public class SensorNodeAdapter extends RecyclerView.Adapter<SensorNodeAdapter.SensorNodeViewHolder> {
     private ArrayList<SensorNode> sensorNodes;
+
+    public interface OnSensorNodeClickListener {
+        void onSensorNodeClick(int position);
+    }
+
+    private OnSensorNodeClickListener clickListener;
+
+    public void setOnSensorNodeClick(OnSensorNodeClickListener listener) {
+        this.clickListener = listener;
+    }
 
     public SensorNodeAdapter(ArrayList<SensorNode> sensorNodes) {
         this.sensorNodes = sensorNodes;
@@ -19,6 +31,7 @@ public class SensorNodeAdapter extends RecyclerView.Adapter<SensorNodeAdapter.Se
     // Card holding values for a SensorNode
     class SensorNodeViewHolder extends RecyclerView.ViewHolder {
         TextView roomText, temperatureText, humidityText, motionText;
+        MaterialButton edit;
 
         public SensorNodeViewHolder(View sensorNodeView) {
             super(sensorNodeView);
@@ -26,6 +39,7 @@ public class SensorNodeAdapter extends RecyclerView.Adapter<SensorNodeAdapter.Se
             temperatureText = sensorNodeView.findViewById(R.id.temperatureText);
             humidityText = sensorNodeView.findViewById(R.id.humidityText);
             motionText = sensorNodeView.findViewById(R.id.motionText);
+            edit = sensorNodeView.findViewById(R.id.edit);
         }
     }
 
@@ -55,6 +69,11 @@ public class SensorNodeAdapter extends RecyclerView.Adapter<SensorNodeAdapter.Se
             sensorNodeViewHolder.humidityText.setText("--");
             sensorNodeViewHolder.motionText.setText("Unreachable");
         }
+        sensorNodeViewHolder.edit.setOnClickListener(v -> {
+            if(clickListener != null) {
+                clickListener.onSensorNodeClick(position);
+            }
+        });
     }
 
     // Return the number of nodes (invoked by the layout manager)
