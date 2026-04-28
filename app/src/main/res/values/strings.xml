@@ -12,4 +12,5 @@
     <string name="heating_title">Heating reminders</string>
     <string name="light_title">Lights reminders</string>
     <string name="ventilation_title">Ventilation reminders</string>
+    <string name="room">Room:</string>
 </resources>
