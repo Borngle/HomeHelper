@@ -18,8 +18,8 @@ bool draw = true; // Only draw on screen change to avoid flickering/corruption
 
 // BH1750
 // Separate I2C bus
-#define BH1750_SCL 13 // Clock
-#define BH1750_SDA 12 // Data
+#define BH1750_SCL 11 // Clock
+#define BH1750_SDA 14 // Data
 BH1750 bh1750;
 
 // PIR
@@ -58,14 +58,12 @@ void setup() {
   lcd.backlight();
   lcd.clear();
   // BH1750 on Wire1 to avoid address conflicts with Wire
-  /*
   Wire1.setSDA(BH1750_SDA);
   Wire1.setSCL(BH1750_SCL);
   Wire1.begin();
   if (!bh1750.begin(BH1750::CONTINUOUS_HIGH_RES_MODE, 0x23, &Wire1)) {
     Serial.println("BH1750 not found");
   }
-  */
   lcd.setCursor(0,0);
   dht.begin();
   pinMode(PIR_PIN, INPUT);
@@ -89,13 +87,12 @@ void loop() {
   float temperature = dht.readTemperature();
   if(isnan(humidity) || isnan(temperature)) {
     Serial.println("Failed to read from DHT sensor");
-    return;
   }
   //float heatIndex = dht.computeHeatIndex(temperature, humidity, false);
   // BH1750
   float lux = -1;
   if(bh1750.measurementReady()) {
-    //lux = bh1750.readLightLevel();
+    lux = bh1750.readLightLevel();
   }
   // HC-SR501 PIR
   int motion = digitalRead(PIR_PIN);
