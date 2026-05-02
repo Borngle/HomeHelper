@@ -1,6 +1,13 @@
 package io.github.borngle.homehelper;
 
+import android.Manifest;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
+import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -9,9 +16,11 @@ import android.view.MenuItem;
 
 import androidx.activity.EdgeToEdge;
 import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContract;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationManagerCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -36,6 +45,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         MaterialToolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+        createNotificationChannel(this);
         // Test node
         SensorNodeRepository sensorNodeRepository = new SensorNodeRepository(this);
         sensorNodes = sensorNodeRepository.loadSensorNodes();
@@ -76,6 +86,34 @@ public class MainActivity extends AppCompatActivity {
             }
         };
         handler.post(pollRunnable);
+        // Intent when user taps notification (resumes naturally)
+        Intent intent = new Intent(this, MainActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        // Lets system fire an intent later on behalf of app
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_IMMUTABLE);
+        // Constructs the notification
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, "ROOM_CHANNEL_ID")
+                .setSmallIcon(android.R.drawable.stat_notify_chat)
+                .setContentTitle("Room Alert")
+                .setContentText("Test")
+                .setPriority(NotificationCompat.PRIORITY_DEFAULT);
+        builder.setContentIntent(pendingIntent).setAutoCancel(true);
+        NotificationManagerCompat notificationManager = NotificationManagerCompat.from(this);
+        if(ActivityCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) {
+            notificationManager.notify(1, builder.build());
+        }
+    }
+
+    private void createNotificationChannel(Context context) {
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            String name = "Room Alerts";
+            String descriptionText = "Notifications for room alerts";
+            int importance = NotificationManager.IMPORTANCE_DEFAULT;
+            NotificationChannel channel = new NotificationChannel("ROOM_CHANNEL_ID", name, importance);
+            channel.setDescription(descriptionText);
+            NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+            notificationManager.createNotificationChannel(channel);
+        }
     }
 
     @Override
