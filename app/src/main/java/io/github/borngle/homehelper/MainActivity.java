@@ -39,7 +39,7 @@ public class MainActivity extends AppCompatActivity {
         // Test node
         SensorNodeRepository sensorNodeRepository = new SensorNodeRepository(this);
         sensorNodes = sensorNodeRepository.loadSensorNodes();
-        if (sensorNodes.isEmpty()) { // Just for testing
+        if(sensorNodes.isEmpty()) { // Just for testing
             sensorNodes.add(new SensorNode("Living Room", ""));
             sensorNodeRepository.saveSensorNodes(sensorNodes);
         }
@@ -47,17 +47,18 @@ public class MainActivity extends AppCompatActivity {
         recyclerView = findViewById(R.id.recyclerView);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         recyclerView.setAdapter(adapter);
-        ActivityResultLauncher<Intent> editSensorNodeLauncher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(),
-                result -> {
-                    if(result.getResultCode() == RESULT_OK && result.getData() != null) {
-                        sensorNodes.clear();
-                        sensorNodes.addAll(sensorNodeRepository.loadSensorNodes());
-                        adapter.notifyDataSetChanged();
-                    }
-                });
+        ActivityResultLauncher<Intent> editSensorNodeLauncher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
+            if(result.getResultCode() == RESULT_OK && result.getData() != null) {
+                int position = result.getData().getIntExtra("position", -1);
+                String newRoom = result.getData().getStringExtra("room");
+                sensorNodes.get(position).setRoom(newRoom);
+                adapter.notifyItemChanged(position);
+            }
+        });
         adapter.setOnSensorNodeClick(position -> {
             Intent intent = new Intent(this, EditSensorNodeActivity.class);
             intent.putExtra("position", position);
+            intent.putExtra("room", sensorNodes.get(position).getRoom());
             editSensorNodeLauncher.launch(intent);
         });
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main_container), (v, insets) -> {

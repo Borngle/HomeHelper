@@ -30,7 +30,7 @@ public class SensorNodeAdapter extends RecyclerView.Adapter<SensorNodeAdapter.Se
 
     // Card holding values for a SensorNode
     class SensorNodeViewHolder extends RecyclerView.ViewHolder {
-        TextView roomText, temperatureText, humidityText, motionText;
+        TextView roomText, temperatureText, humidityText, motionText, statusBadge;
         MaterialButton edit;
 
         public SensorNodeViewHolder(View sensorNodeView) {
@@ -40,6 +40,7 @@ public class SensorNodeAdapter extends RecyclerView.Adapter<SensorNodeAdapter.Se
             humidityText = sensorNodeView.findViewById(R.id.humidityText);
             motionText = sensorNodeView.findViewById(R.id.motionText);
             edit = sensorNodeView.findViewById(R.id.edit);
+            statusBadge = sensorNodeView.findViewById(R.id.statusBadge);
         }
     }
 
@@ -51,7 +52,16 @@ public class SensorNodeAdapter extends RecyclerView.Adapter<SensorNodeAdapter.Se
                 .inflate(R.layout.sensor_node, viewGroup, false);
         int screenHeight = viewGroup.getResources().getDisplayMetrics().heightPixels;
         sensorNodeView.getLayoutParams().height = screenHeight / 3;
-        return new SensorNodeViewHolder(sensorNodeView);
+        SensorNodeViewHolder sensorNodeViewHolder = new SensorNodeViewHolder(sensorNodeView);
+        sensorNodeViewHolder.edit.setOnClickListener(v -> {
+            if(clickListener != null) {
+                int currentPosition = sensorNodeViewHolder.getBindingAdapterPosition();
+                if(currentPosition != RecyclerView.NO_ID) {
+                    clickListener.onSensorNodeClick(currentPosition);
+                }
+            }
+        });
+        return sensorNodeViewHolder;
     }
 
     // Replace the contents of a view (invoked by the layout manager)
@@ -60,20 +70,21 @@ public class SensorNodeAdapter extends RecyclerView.Adapter<SensorNodeAdapter.Se
         SensorNode sensorNode = sensorNodes.get(position);
         sensorNodeViewHolder.roomText.setText(sensorNode.getRoom());
         if(sensorNode.isReachable()) {
+            sensorNodeViewHolder.statusBadge.setVisibility(View.VISIBLE);
+            sensorNodeViewHolder.statusBadge.setText("ONLINE");
+            sensorNodeViewHolder.statusBadge.setBackgroundResource(R.drawable.badge_background_green);
             sensorNodeViewHolder.temperatureText.setText("Temperature: " + sensorNode.getTemperature() + "°C");
             sensorNodeViewHolder.humidityText.setText("Humidity: " + sensorNode.getHumidity() + "%");
             sensorNodeViewHolder.motionText.setText(sensorNode.isMotion() ? "Room occupied" : "Empty room");
         }
         else {
-            sensorNodeViewHolder.temperatureText.setText("--");
-            sensorNodeViewHolder.humidityText.setText("--");
+            sensorNodeViewHolder.statusBadge.setVisibility(View.VISIBLE);
+            sensorNodeViewHolder.statusBadge.setText("OFFLINE");
+            sensorNodeViewHolder.statusBadge.setBackgroundResource(R.drawable.badge_background_grey);
+            sensorNodeViewHolder.temperatureText.setText("Temperature:");
+            sensorNodeViewHolder.humidityText.setText("Humidity:");
             sensorNodeViewHolder.motionText.setText("Unreachable");
         }
-        sensorNodeViewHolder.edit.setOnClickListener(v -> {
-            if(clickListener != null) {
-                clickListener.onSensorNodeClick(position);
-            }
-        });
     }
 
     // Return the number of nodes (invoked by the layout manager)

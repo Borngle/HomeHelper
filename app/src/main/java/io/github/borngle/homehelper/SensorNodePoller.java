@@ -1,11 +1,9 @@
 package io.github.borngle.homehelper;
 
-import android.hardware.Sensor;
 import android.os.Handler;
 
 import androidx.annotation.NonNull;
 
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
@@ -38,7 +36,7 @@ public class SensorNodePoller {
     public void pollNode(int position) {
         SensorNode sensorNode = sensorNodes.get(position);
         String url = sensorNode.getUrl();
-        if (url == null || url.isEmpty()) {
+        if(url == null || url.isEmpty()) {
             return;
         }
         Request get = new Request.Builder()
@@ -50,12 +48,11 @@ public class SensorNodePoller {
                 sensorNode.setReachable(false);
                 mainHandler.post(() -> adapter.updateSensorNode(position));
             }
-
             @Override
-            public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
+            public void onResponse(@NonNull Call call, @NonNull Response response) {
                 try {
                     ResponseBody responseBody = response.body();
-                    if (!response.isSuccessful() || responseBody == null) {
+                    if(!response.isSuccessful() || responseBody == null) {
                         sensorNode.setReachable(false);
                         return;
                     }
@@ -66,7 +63,7 @@ public class SensorNodePoller {
                     sensorNode.setMotion(json.getBoolean("motion"));
                     sensorNode.setReachable(true);
                 }
-                catch (Exception e) {
+                catch(Exception e) {
                     sensorNode.setReachable(false);
                 }
                 finally {

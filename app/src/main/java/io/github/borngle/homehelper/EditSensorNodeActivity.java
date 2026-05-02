@@ -30,16 +30,25 @@ public class EditSensorNodeActivity extends AppCompatActivity {
             return insets;
         });
         int position = getIntent().getIntExtra("position", -1);
+        String room = getIntent().getStringExtra("room");
         SensorNodeRepository sensorNodeRepository = new SensorNodeRepository(this);
-        SensorNode sensorNode = sensorNodeRepository.loadSensorNodes().get(position);
+        if(position == -1 || room == null) {
+            finish();
+            return;
+        }
         EditText roomInput = findViewById(R.id.roomInput);
-        roomInput.setText(sensorNode.getRoom()); // Existing name
+        roomInput.setText(room); // Existing name
         findViewById(R.id.save).setOnClickListener(v -> {
             String newRoom = roomInput.getText().toString();
-            sensorNode.setRoom(newRoom);
+            if(newRoom.isEmpty()) {
+                roomInput.setError("Room name cannot be blank");
+                return;
+            }
             ArrayList<SensorNode> sensorNodes = sensorNodeRepository.loadSensorNodes();
-            sensorNodes.set(position, sensorNode); // Update
-            sensorNodeRepository.saveSensorNodes(sensorNodes);
+            if(position < sensorNodes.size()) {
+                sensorNodes.get(position).setRoom(newRoom);
+                sensorNodeRepository.saveSensorNodes(sensorNodes);
+            }
             Intent intent = new Intent();
             intent.putExtra("position", position);
             intent.putExtra("room", newRoom);
