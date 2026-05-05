@@ -3,10 +3,6 @@
     <PreferenceCategory app:title="@string/notifications">
 
         <!-- TODO: SELECTABLE TIME AMOUNT -->
-        <EditTextPreference
-            app:key="signature"
-            app:title="@string/heating_limit"
-            app:useSimpleSummaryProvider="true" />
 
         <ListPreference
             app:defaultValue="On"

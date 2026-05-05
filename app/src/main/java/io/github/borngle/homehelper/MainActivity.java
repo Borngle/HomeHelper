@@ -1,12 +1,9 @@
 package io.github.borngle.homehelper;
 
-import android.Manifest;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
-import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -18,9 +15,6 @@ import androidx.activity.EdgeToEdge;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
-import androidx.core.app.NotificationCompat;
-import androidx.core.app.NotificationManagerCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -35,8 +29,11 @@ public class MainActivity extends AppCompatActivity {
     private RecyclerView recyclerView;
     private SensorNodeAdapter adapter;
     private ArrayList<SensorNode> sensorNodes;
-    private Handler handler;
-    private Runnable pollRunnable;
+    private Handler sensorNodeHandler;
+    private Runnable sensorNodeRunnable;
+    private Handler weatherHandler;
+    private Runnable weatherRunnable;
+    private final OutsideConditions outsideConditions = new OutsideConditions();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -76,32 +73,26 @@ public class MainActivity extends AppCompatActivity {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
-        handler = new Handler(Looper.getMainLooper());
-        SensorNodePoller poller = new SensorNodePoller(sensorNodes, adapter, handler);
-        pollRunnable = new Runnable() {
+        weatherHandler = new Handler(Looper.getMainLooper());
+        OutsideConditionsPoller outsideConditionsPoller = new OutsideConditionsPoller(this, outsideConditions);
+        weatherRunnable = new Runnable() {
             @Override
             public void run() {
-                poller.pollAll();
-                handler.postDelayed(this, 2000);
+                outsideConditionsPoller.poll();
+                weatherHandler.postDelayed(this, 5 * 60 * 1000);
             }
         };
-        handler.post(pollRunnable);
-        // Intent when user taps notification (resumes naturally)
-        Intent intent = new Intent(this, MainActivity.class);
-        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-        // Lets system fire an intent later on behalf of app
-        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_IMMUTABLE);
-        // Constructs the notification
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, "ROOM_CHANNEL_ID")
-                .setSmallIcon(android.R.drawable.stat_notify_chat)
-                .setContentTitle("Room Alert")
-                .setContentText("Test")
-                .setPriority(NotificationCompat.PRIORITY_DEFAULT);
-        builder.setContentIntent(pendingIntent).setAutoCancel(true);
-        NotificationManagerCompat notificationManager = NotificationManagerCompat.from(this);
-        if(ActivityCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) {
-            notificationManager.notify(1, builder.build());
-        }
+        weatherHandler.post(weatherRunnable);
+        sensorNodeHandler = new Handler(Looper.getMainLooper());
+        SensorNodePoller sensorNodePoller = new SensorNodePoller(this, sensorNodes, adapter, sensorNodeHandler, outsideConditions);
+        sensorNodeRunnable = new Runnable() {
+            @Override
+            public void run() {
+                sensorNodePoller.pollAll();
+                sensorNodeHandler.postDelayed(this, 2000);
+            }
+        };
+        sensorNodeHandler.post(sensorNodeRunnable);
     }
 
     private void createNotificationChannel(Context context) {
@@ -134,6 +125,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        handler.removeCallbacks(pollRunnable);
+        sensorNodeHandler.removeCallbacks(sensorNodeRunnable);
+        weatherHandler.removeCallbacks(weatherRunnable);
     }
 }
