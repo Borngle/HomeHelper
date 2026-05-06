@@ -90,10 +90,7 @@ void loop() {
   }
   //float heatIndex = dht.computeHeatIndex(temperature, humidity, false);
   // BH1750
-  float lux = -1;
-  if(bh1750.measurementReady()) {
-    lux = bh1750.readLightLevel();
-  }
+  float lux = bh1750.readLightLevel();
   // HC-SR501 PIR
   int motion = digitalRead(PIR_PIN);
   if(now >= PIR_WAIT) {

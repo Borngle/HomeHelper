@@ -5,6 +5,7 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.util.Log;
 
 import androidx.core.app.ActivityCompat;
 import androidx.core.app.NotificationCompat;
@@ -15,9 +16,9 @@ import java.util.Map;
 
 public class HomeNotificationManager {
     // Base notification IDs
-    private static final int baseHeatingID = 100;
-    private static final int baseHumidityID = 200;
-    private static final int baseLightsID = 300;
+    private static final int baseHeatingID = 1000;
+    private static final int baseHumidityID = 2000;
+    private static final int baseLightsID = 3000;
 
     // Notification cooldowns in milliseconds
     private static final long cooldownHeating = 30 * 60 * 1000; // 30 minutes
@@ -37,6 +38,7 @@ public class HomeNotificationManager {
     }
 
     public void evaluate(SensorNode sensorNode, SensorNodeHistory sensorNodeHistory, int position, float outsideTemp, float outsideLux) {
+        // TODO: configurable thresholds and room preferences (plant mode, pet mode)
         if(!sensorNode.isReachable()) {
             return;
         }
@@ -45,32 +47,66 @@ public class HomeNotificationManager {
         if(sensorNodeHistory.getRecordings().size() < 10) { // Minimum number of recordings
             return;
         }
-        // Lights left on in unoccupied room
-        if(analysis.lightsLikelyOn && !analysis.likelyOccupied) {
-            notify(
-                    baseLightsID + position, cooldownLights,
-                    "Lights left on in" + room,
-                    "Lights appear to be on in an empty room"
-            );
-        }
-        // TODO: Lights on and there is a lot of natural light already
-
         // Heating on in unoccupied room
         if(analysis.heatingLikelyOn && !analysis.likelyOccupied) {
             notify(
                     baseHeatingID + position, cooldownHeating,
                     "Heating on in " + room,
-                    "Heating seems to be running in an empty room"
+                    "Heating seems to be running in an empty room; consider turning it off"
+            );
+        }
+        else if(analysis.heatingUnnecessary) {
+            notify(
+                    baseHeatingID + position + 100, cooldownHeating,
+                    "Heating on in " + room,
+                    "Outside temperature is moderate and heating is on; turn heating off?"
             );
         }
         // TODO: Heating on past set limit
-
         // High humidity, room unventilated
-        if(analysis.humidityLikelyHigh) {
+        if(analysis.humidityHigh) {
             notify(
                     baseHumidityID + position, cooldownHumidity,
                     "High humidity in " + room,
-                    "Humidity is around " + sensorNode.getHumidity() + "%"
+                    "Consider opening a window or turning on a dehumidifier to prevent mould"
+            );
+        }
+        // Low humidity, air is dry
+        if(analysis.humidityLow) {
+            notify(baseHumidityID + position + 100, cooldownHumidity,
+                    "Low humidity in " + room,
+                    "The air is very dry; consider turning on a humidifier"
+            );
+        }
+        // Lights left on in unoccupied room
+        if(analysis.lightsLikelyOn && !analysis.likelyOccupied) {
+            notify(
+                    baseLightsID + position, cooldownLights,
+                    "Lights left on in" + room,
+                    "Lights appear to be on in an empty room; consider turning them off"
+            );
+        }
+        // Lights are on but it is bright outside
+        if(analysis.lightsUnnecessary) {
+            notify(
+                    baseLightsID + position + 100, cooldownLights,
+                    "Lights are on in " + room,
+                    "It is quite bright outside; consider turning them off"
+            );
+        }
+        // Dark in an occupied room during the day
+        if(analysis.roomDarkDuringDay) {
+            notify(
+                    baseLightsID + position + 200, cooldownLights,
+                    "It's dark in " + room,
+                    "It could be good to let some light in; consider opening the blinds"
+            );
+        }
+        // Obstructed
+        if(analysis.obstructed) {
+            notify(baseLightsID + position + 300, cooldownLights,
+                    room + " node obstructed",
+                    "Cannot read light level until unobstructed"
             );
         }
     }

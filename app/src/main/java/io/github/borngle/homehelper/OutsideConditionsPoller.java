@@ -3,6 +3,7 @@ package io.github.borngle.homehelper;
 import android.Manifest;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
@@ -37,18 +38,18 @@ public class OutsideConditionsPoller {
     }
 
     public void poll() {
-        if(ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+        if(ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             return;
         }
         FusedLocationProviderClient locationClient = LocationServices.getFusedLocationProviderClient(context);
-        locationClient.getCurrentLocation(Priority.PRIORITY_BALANCED_POWER_ACCURACY, null).addOnSuccessListener(location -> {
+        locationClient.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, null).addOnSuccessListener(location -> {
             if (location == null) {
                 return;
             }
             String url = "https://api.open-meteo.com/v1/forecast"
                     + "?latitude=" + location.getLatitude()
                     + "&longitude=" + location.getLongitude()
-                    + "&current=temperature_2m,direct_radiation"
+                    + "&current=temperature_2m,shortwave_radiation"
                     + "&forecast_days=1";
             Request get = new Request.Builder()
                     .url(url)
@@ -63,12 +64,12 @@ public class OutsideConditionsPoller {
                 public void onResponse(@NonNull Call call, @NonNull Response response) {
                     try {
                         ResponseBody body = response.body();
-                        if(!response.isSuccessful() || body == null) {
+                        if(!response.isSuccessful()) {
                             return;
                         }
                         JSONObject json = new JSONObject(body.string()).getJSONObject("current");
                         float temperature = (float) json.getDouble("temperature_2m");
-                        float lux = (float) json.getDouble("direct_radiation") * 120f;
+                        float lux = (float) json.getDouble("shortwave_radiation") * 120f;
                         outsideConditions.setTemperature(temperature);
                         outsideConditions.setLux(lux);
                     }
