@@ -4,7 +4,7 @@ import java.util.Calendar;
 
 public class RoomAnalyser {
     // Thresholds
-    // TODO: add some of these as configurable preferences
+
     private static final float occupiedMotionFraction = 0.15f; // 15% of polls had motion
     private static final float temperatureDelta = 0.5f; // Rise over the recording window
     private static final float temperatureAboveOutside = 3; // Room warmer than outside by this much
@@ -51,6 +51,8 @@ public class RoomAnalyser {
     }
 
     public Analysis analyse(SensorNode sensorNode, SensorNodeHistory sensorNodeHistory, float outsideTemperature, float outsideLux) {
+        float outsideLightStrength = Math.min(outsideLux / 1000, 1);
+        boolean isDay = outsideLightStrength > 0.3;
         // Occupancy
         boolean occupied = sensorNodeHistory.motionFraction() >= occupiedMotionFraction;
         // Heating
@@ -66,8 +68,8 @@ public class RoomAnalyser {
         // Lights
         float roomLux = sensorNodeHistory.averageLux();
         boolean isDarkOutside = outsideLux <= expectedNightLux;
-        boolean lightsOn = (isDarkOutside && roomLux > lightsOnLux) || (roomLux - outsideLux) > lightAboveOutsideLux;
-        boolean roomDarkDuringDay = outsideLux > 500 && roomLux < 50 && occupied;
+        boolean lightsOn = (roomLux > lightsOnLux) && (roomLux > outsideLux * 0.05);
+        boolean roomDarkDuringDay = outsideLux > 200 && roomLux < (outsideLux * 0.05) && occupied;
         boolean lightsUnnecessary = lightsOn && outsideLux > 500;
         boolean obstructed = sensorNodeHistory.averageLux() <= 0 && outsideLux > expectedNightLux
                 && sensorNodeHistory.getRecordings().size() >= 10;

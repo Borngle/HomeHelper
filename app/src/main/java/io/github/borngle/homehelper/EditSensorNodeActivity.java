@@ -52,16 +52,22 @@ public class EditSensorNodeActivity extends AppCompatActivity {
                 return;
             }
             ArrayList<SensorNode> sensorNodes = sensorNodeRepository.loadSensorNodes();
+            boolean notifyHeating = switchHeating.isChecked();
+            boolean notifyHumidity = switchHumidity.isChecked();
+            boolean notifyLights = switchLights.isChecked();
             if(position < sensorNodes.size()) {
                 sensorNodes.get(position).setRoom(newRoom);
+                sensorNodes.get(position).setNotifyHeating(notifyHeating);
+                sensorNodes.get(position).setNotifyHumidity(notifyHumidity);
+                sensorNodes.get(position).setNotifyLights(notifyLights);
                 sensorNodeRepository.saveSensorNodes(sensorNodes);
             }
             Intent intent = new Intent();
             intent.putExtra("position", position);
             intent.putExtra("room", newRoom);
-            intent.putExtra("notifyHeating", sensorNodes.get(position).getNotifyHeating());
-            intent.putExtra("notifyHumidity", sensorNodes.get(position).getNotifyHumidity());
-            intent.putExtra("notifyLights", sensorNodes.get(position).getNotifyLights());
+            intent.putExtra("notifyHeating", notifyHeating);
+            intent.putExtra("notifyHumidity", notifyHumidity);
+            intent.putExtra("notifyLights", notifyLights);
             setResult(RESULT_OK, intent);
             finish();
         });

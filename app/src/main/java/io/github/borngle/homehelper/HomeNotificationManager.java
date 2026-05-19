@@ -87,26 +87,20 @@ public class HomeNotificationManager {
                         .apply();
             }
         }
+        // Can send these notifications
+        boolean heating = sensorNode.getNotifyHeating() && globalHeating;
+        boolean humidity = sensorNode.getNotifyHumidity() && globalHumidity;
+        boolean lights = sensorNode.getNotifyLights() && globalLights;
         String room = sensorNode.getRoom();
-        // Lights left on in unoccupied room
-        if(analysis.lightsLikelyOn && !analysis.likelyOccupied && sensorNode.getNotifyLights() && globalLights) {
-            notify(
-                    baseLightsID + position, cooldownLights,
-                    "Lights left on in " + room,
-                    "Lights appear to be on in an empty room"
-            );
-        }
-        // TODO: Lights on and there is a lot of natural light already
-
         // Heating on in unoccupied room
-        if(analysis.heatingLikelyOn && !analysis.likelyOccupied && sensorNode.getNotifyHeating() && globalHeating) {
+        if(analysis.heatingLikelyOn && !analysis.likelyOccupied && heating) {
             notify(
                     baseHeatingID + position, cooldownHeating,
                     "Heating on in " + room,
                     "Heating seems to be running in an empty room; consider turning it off"
             );
         }
-        else if(analysis.heatingUnnecessary) {
+        else if(analysis.heatingUnnecessary && heating) {
             notify(
                     baseHeatingID + position + 100, cooldownHeating,
                     "Heating on in " + room,
@@ -114,16 +108,15 @@ public class HomeNotificationManager {
             );
         }
         // Heating limit exceeded
-        if(heatingLimitHours > 0 && heatingHoursToday >= heatingLimitHours) {
+        if(heatingLimitHours > 0 && heatingHoursToday >= heatingLimitHours && heating) {
             notify(
                     baseHeatingID + 10000, cooldownHeating,
                     "Heating limit exceeded",
                     "Heating has run for " + heatingHoursToday + " of " + heatingLimitHours + " hours today"
             );
         }
-
         // High humidity, room unventilated
-        if(analysis.humidityLikelyHigh && sensorNode.getNotifyHumidity() && globalHumidity) {
+        if(analysis.humidityHigh && humidity) {
             notify(
                     baseHumidityID + position, cooldownHumidity,
                     "High humidity in " + room,
@@ -131,14 +124,14 @@ public class HomeNotificationManager {
             );
         }
         // Low humidity, air is dry
-        if(analysis.humidityLow) {
+        if(analysis.humidityLow && humidity) {
             notify(baseHumidityID + position + 100, cooldownHumidity,
                     "Low humidity in " + room,
                     "The air is very dry; consider turning on a humidifier"
             );
         }
         // Lights left on in unoccupied room
-        if(analysis.lightsLikelyOn && !analysis.likelyOccupied) {
+        if(analysis.lightsLikelyOn && !analysis.likelyOccupied && lights) {
             notify(
                     baseLightsID + position, cooldownLights,
                     "Lights left on in" + room,
@@ -146,7 +139,7 @@ public class HomeNotificationManager {
             );
         }
         // Lights are on but it is bright outside
-        if(analysis.lightsUnnecessary) {
+        if(analysis.lightsUnnecessary && lights) {
             notify(
                     baseLightsID + position + 100, cooldownLights,
                     "Lights are on in " + room,
@@ -154,7 +147,7 @@ public class HomeNotificationManager {
             );
         }
         // Dark in an occupied room during the day
-        if(analysis.roomDarkDuringDay) {
+        if(analysis.roomDarkDuringDay && lights) {
             notify(
                     baseLightsID + position + 200, cooldownLights,
                     "It's dark in " + room,
@@ -162,7 +155,7 @@ public class HomeNotificationManager {
             );
         }
         // Obstructed
-        if(analysis.obstructed) {
+        if(analysis.obstructed && lights) {
             notify(baseLightsID + position + 300, cooldownLights,
                     room + " node obstructed",
                     "Cannot read light level until unobstructed"
