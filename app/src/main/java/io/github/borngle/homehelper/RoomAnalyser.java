@@ -1,18 +1,18 @@
 package io.github.borngle.homehelper;
 
-import java.util.Calendar;
 
 public class RoomAnalyser {
     // Thresholds
-
     private static final float occupiedMotionFraction = 0.15f; // 15% of polls had motion
     private static final float temperatureDelta = 0.5f; // Rise over the recording window
     private static final float temperatureAboveOutside = 3; // Room warmer than outside by this much
     private static final float moderateOutsideTemperature = 15;
     private static final float warmInsideTemperature = 25;
+    private static final float coldInsideTemperature = 17;
 
     private static final float highHumidity = 70; // Uncomfortable above this
-    private static final float lowHumidity = 30; // Uncomfortable below this
+    private static final float moderateHumidity = 55;
+    private static final float lowHumidity = 35; // Uncomfortable below this
     private static final float humidityDelta = 10; // Rise over the recording window
 
     private static final float lightsOnLux = 85; // Lux above this means lights likely on
@@ -27,7 +27,6 @@ public class RoomAnalyser {
         public final boolean heatingLikelyOn;
         public final boolean roomCold;
         public final boolean roomWarm;
-        public final boolean heatingUnnecessary;
         public final boolean outsideWarm;
         // Humidity
         public final boolean humidityHigh;
@@ -39,13 +38,12 @@ public class RoomAnalyser {
         public final boolean obstructed;
 
         public Analysis(boolean likelyOccupied, boolean heatingLikelyOn, boolean roomCold, boolean roomWarm,
-                        boolean heatingUnnecessary, boolean outsideWarm, boolean humidityHigh, boolean humidityLow, boolean lightsLikelyOn,
+                        boolean outsideWarm, boolean humidityHigh, boolean humidityLow, boolean lightsLikelyOn,
                         boolean roomDarkDuringDay, boolean lightsUnnecessary, boolean obstructed) {
             this.likelyOccupied = likelyOccupied;
             this.heatingLikelyOn = heatingLikelyOn;
             this.roomCold = roomCold;
             this.roomWarm = roomWarm;
-            this.heatingUnnecessary = heatingUnnecessary;
             this.outsideWarm = outsideWarm;
             this.humidityHigh = humidityHigh;
             this.humidityLow = humidityLow;
@@ -63,12 +61,12 @@ public class RoomAnalyser {
         float gap = sensorNode.getTemperature() - outsideTemperature;
         float temperatureTrend = sensorNodeHistory.temperatureTrend();
         boolean heatingOn = gap > temperatureAboveOutside && temperatureTrend > temperatureDelta;
-        boolean roomCold = sensorNode.getTemperature() < moderateOutsideTemperature && sensorNodeHistory.temperatureTrend() < 0;
+        boolean roomCold = sensorNode.getTemperature() < coldInsideTemperature && sensorNodeHistory.temperatureTrend() < 0;
         boolean roomWarm = sensorNode.getTemperature() > warmInsideTemperature && sensorNodeHistory.temperatureTrend() > 0;
-        boolean heatingUnnecessary = heatingOn && outsideTemperature > moderateOutsideTemperature;
         boolean outsideWarm = outsideTemperature > moderateOutsideTemperature;
         // Humidity
-        boolean humidityHigh = sensorNodeHistory.averageHumidity() >= highHumidity || sensorNodeHistory.humidityTrend() > humidityDelta;
+        boolean humidityHigh = sensorNodeHistory.averageHumidity() >= highHumidity ||
+                (sensorNodeHistory.humidityTrend() > humidityDelta && sensorNodeHistory.averageHumidity() > moderateHumidity);
         boolean humidityLow = sensorNodeHistory.averageHumidity() <= lowHumidity; // Air is too dry
         // Lights
         float roomLux = sensorNodeHistory.averageLux();
@@ -76,12 +74,12 @@ public class RoomAnalyser {
         float luxTrend = sensorNodeHistory.luxTrend();
         boolean isDarkOutside = outsideLux <= darkOutsideLux;
         boolean isBrightOutside = outsideLux >= brightOutsideLux;
-        boolean lightsOn = (currentLux > lightsOnLux) && luxTrend >= lightsDelta; // Room fairly bright and trend is a spike
-        boolean roomDarkDuringDay = isBrightOutside && roomLux < darkRoomLux && occupied;
+        boolean lightsOn = currentLux > lightsOnLux && (luxTrend >= lightsDelta || sensorNodeHistory.averageLux() > lightsOnLux); // Room fairly bright and trend is a spike
+        boolean roomDarkDuringDay = isBrightOutside && roomLux < darkRoomLux && occupied && sensorNodeHistory.luxTrend() >= 0;;
         boolean lightsUnnecessary = lightsOn && isBrightOutside;
         boolean obstructed = sensorNodeHistory.averageLux() <= 0 && !isDarkOutside
                 && sensorNodeHistory.getRecordings().size() >= 10;
-        return new Analysis(occupied, heatingOn, roomCold, roomWarm, heatingUnnecessary, outsideWarm, humidityHigh,
+        return new Analysis(occupied, heatingOn, roomCold, roomWarm, outsideWarm, humidityHigh,
                 humidityLow, lightsOn, roomDarkDuringDay, lightsUnnecessary, obstructed);
     }
 }

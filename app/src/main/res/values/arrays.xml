@@ -29,4 +29,16 @@
         <item>On</item>
         <item>Off</item>
     </string-array>
+
+    <string-array name="frequency_entries">
+        <item>Every 15 minutes</item>
+        <item>Every 30 minutes</item>
+        <item>Every hour</item>
+    </string-array>
+
+    <string-array name="frequency_values">
+        <item>900000</item>
+        <item>1800000</item>
+        <item>3600000</item>
+    </string-array>
 </resources>

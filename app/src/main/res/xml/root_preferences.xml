@@ -1,10 +1,6 @@
 <PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <PreferenceCategory app:title="@string/notifications">
-        <EditTextPreference
-            app:key="daily_heating_limit"
-            app:title="Daily heating limit"
-            app:defaultValue="0" />
 
         <ListPreference
             app:defaultValue="On"
@@ -30,6 +26,20 @@
             app:title="@string/lights_title"
             app:useSimpleSummaryProvider="true" />
 
+        <ListPreference
+            app:key="notification_frequency"
+            app:title="Notification frequency"
+            app:entries="@array/frequency_entries"
+            app:entryValues="@array/frequency_values"
+            app:defaultValue="1800000"
+            app:useSimpleSummaryProvider="true" />
+    </PreferenceCategory>
+
+    <PreferenceCategory app:title="Comfort">
+        <EditTextPreference
+            app:key="daily_heating_limit"
+            app:title="Daily heating limit"
+            app:defaultValue="" />
     </PreferenceCategory>
 
 </PreferenceScreen>

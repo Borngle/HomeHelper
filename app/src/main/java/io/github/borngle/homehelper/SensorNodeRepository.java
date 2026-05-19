@@ -33,6 +33,7 @@ public class SensorNodeRepository {
                 sensorNode.setNotifyHeating(jsonObject.optBoolean("notifyHeating", true));
                 sensorNode.setNotifyHumidity(jsonObject.optBoolean("notifyHumidity", true));
                 sensorNode.setNotifyLights(jsonObject.optBoolean("notifyLights", true));
+                sensorNode.setIdealTemperature((float) jsonObject.optDouble("idealTemperature", 21.0));
                 sensorNodes.add(sensorNode);
             }
         }
@@ -52,6 +53,7 @@ public class SensorNodeRepository {
                 jsonObject.put("notifyHeating", sensorNodes.get(i).getNotifyHeating());
                 jsonObject.put("notifyHumidity", sensorNodes.get(i).getNotifyHumidity());
                 jsonObject.put("notifyLights", sensorNodes.get(i).getNotifyLights());
+                jsonObject.put("idealTemperature", sensorNodes.get(i).getIdealTemperature());
                 jsonArray.put(jsonObject);
             }
             sharedPreferences.edit().putString("nodes", jsonArray.toString()).apply();

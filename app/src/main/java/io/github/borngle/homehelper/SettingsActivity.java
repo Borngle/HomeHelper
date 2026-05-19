@@ -2,6 +2,7 @@ package io.github.borngle.homehelper;
 
 import android.os.Bundle;
 import android.text.InputType;
+import android.util.Log;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.ActionBar;
@@ -49,6 +50,13 @@ public class SettingsActivity extends AppCompatActivity {
                 heatingLimit.setOnBindEditTextListener(editText -> {
                     editText.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
                     editText.selectAll();
+                });
+                heatingLimit.setSummaryProvider(preference -> {
+                    String value = ((EditTextPreference) preference).getText();
+                    if(value == null || value.isEmpty() || value.equals("0")) {
+                        return "No limit set";
+                    }
+                    return value + " hours";
                 });
                 heatingLimit.setOnPreferenceChangeListener((preference, newValue) -> {
                     try {

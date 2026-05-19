@@ -45,6 +45,8 @@ public class EditSensorNodeActivity extends AppCompatActivity {
         switchHeating.setChecked(getIntent().getBooleanExtra("notifyHeating", true));
         switchHumidity.setChecked(getIntent().getBooleanExtra("notifyHumidity", true));
         switchLights.setChecked(getIntent().getBooleanExtra("notifyLights", true));
+        EditText idealTemperatureInput = findViewById(R.id.idealTemperatureInput);
+        idealTemperatureInput.setText(String.valueOf(getIntent().getFloatExtra("idealTemperature", 21f)));
         findViewById(R.id.save).setOnClickListener(v -> {
             String newRoom = roomInput.getText().toString();
             if(newRoom.isEmpty()) {
@@ -55,11 +57,30 @@ public class EditSensorNodeActivity extends AppCompatActivity {
             boolean notifyHeating = switchHeating.isChecked();
             boolean notifyHumidity = switchHumidity.isChecked();
             boolean notifyLights = switchLights.isChecked();
+            float idealTemperature = 21f;
+            String rawTemperature = idealTemperatureInput.getText().toString();
+            if(!rawTemperature.isEmpty()) {
+                try {
+                    float temperature = Float.parseFloat(rawTemperature);
+                    if(temperature > 10 && temperature < 35) {
+                        idealTemperature = temperature;
+                    }
+                    else {
+                        idealTemperatureInput.setError("Must be between 10°C and 35°C");
+                        return;
+                    }
+                }
+                catch(NumberFormatException numberFormatException) {
+                    idealTemperatureInput.setError("Invalid temperature");
+                    return;
+                }
+            }
             if(position < sensorNodes.size()) {
                 sensorNodes.get(position).setRoom(newRoom);
                 sensorNodes.get(position).setNotifyHeating(notifyHeating);
                 sensorNodes.get(position).setNotifyHumidity(notifyHumidity);
                 sensorNodes.get(position).setNotifyLights(notifyLights);
+                sensorNodes.get(position).setIdealTemperature(idealTemperature);
                 sensorNodeRepository.saveSensorNodes(sensorNodes);
             }
             Intent intent = new Intent();

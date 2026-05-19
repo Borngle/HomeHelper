@@ -13,7 +13,6 @@ import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 import androidx.preference.PreferenceManager;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -22,11 +21,6 @@ public class HomeNotificationManager {
     private static final int baseHeatingID = 1000;
     private static final int baseHumidityID = 2000;
     private static final int baseLightsID = 3000;
-
-    // Notification cooldowns in milliseconds
-    private static final long cooldownHeating = 30 * 60 * 1000; // 30 minutes
-    private static final long cooldownHumidity = 10 * 60 * 1000; // 10 minutes
-    private static final long cooldownLights = 10 * 60 * 1000; // 10 minutes
 
     private final Context context;
     private final NotificationManagerCompat notificationManagerCompat;
@@ -56,9 +50,10 @@ public class HomeNotificationManager {
         boolean globalHeating = !("Off").equals(sharedPreferences.getString("notify_heating_global", "On"));
         boolean globalLights = !("Off").equals(sharedPreferences.getString("notify_lights_global", "On"));
         boolean globalHumidity = !("Off").equals(sharedPreferences.getString("notify_humidity_global", "On"));
+        long cooldown = Long.parseLong(sharedPreferences.getString("notification_frequency", "1800000"));
         // Read heating limit (0 means disabled)
         float heatingLimitHours = 0;
-        String raw = sharedPreferences.getString("heating_daily_limit_hours", "0");
+        String raw = sharedPreferences.getString("daily_heating_limit", "0");
         float parsed = Float.parseFloat(raw);
         if(parsed > 0) {
             heatingLimitHours = parsed;
@@ -76,6 +71,12 @@ public class HomeNotificationManager {
         RoomAnalyser.Analysis analysis = roomAnalyser.analyse(sensorNode, sensorNodeHistory, outsideTemperature, outsideLux);
         sensorNode.setMotion(analysis.likelyOccupied);
         if(analysis.heatingLikelyOn) {
+            sensorNode.setHeatingOn(true);
+        }
+        else if(sensorNodeHistory.temperatureTrend() < -0.3f) {
+            sensorNode.setHeatingOn(false);
+        }
+        if(sensorNode.isHeatingOn()) {
             long now = System.currentTimeMillis();
             // Only increment once every 2 seconds globally
             if(now - lastHeatingIncrement >= 2000) {
@@ -94,38 +95,55 @@ public class HomeNotificationManager {
         boolean lights = sensorNode.getNotifyLights() && globalLights;
         String room = sensorNode.getRoom();
         // Heating on in unoccupied room
-        if(analysis.heatingLikelyOn && !analysis.likelyOccupied && heating) {
+        if(sensorNode.isHeatingOn() && !analysis.likelyOccupied && heating) {
+            float difference = sensorNode.getTemperature() - sensorNode.getIdealTemperature();
+            String temperatureInformation;
+            if(difference == 0) {
+                temperatureInformation = String.format("Room is at ideal temperature of %.1f°C", difference);
+            }
+            else if(difference > 0) {
+                temperatureInformation = String.format("Room is %.1f°C above ideal", difference);
+            }
+            else {
+                temperatureInformation = String.format("Room is %.1f°C below ideal", Math.abs(difference));
+            }
             notify(
-                    baseHeatingID + position, cooldownHeating,
+                    baseHeatingID + position, cooldown,
                     "Heating on in " + room,
-                    "Heating seems to be running in an empty room; consider turning it off"
+                    "Heating seems to be running in an empty room; consider turning it off " + "(" +
+                            temperatureInformation + ")"
             );
         }
-        else if(analysis.heatingUnnecessary && heating) {
+        // Heating on and outside is moderate
+        else if(sensorNode.isHeatingOn() && analysis.outsideWarm && heating) {
+            float difference = sensorNode.getTemperature() - sensorNode.getIdealTemperature();
+            String body = difference >= 0
+                    ? String.format("Room is at %.1f°C, already at or above ideal", sensorNode.getTemperature())
+                    : "Outside temperature is moderate and heating is on; turn heating off?";
             notify(
-                    baseHeatingID + position + 100, cooldownHeating,
+                    baseHeatingID + position + 100, cooldown,
                     "Heating on in " + room,
-                    "Outside temperature is moderate and heating is on; turn heating off?"
+                    body
             );
         }
         // Heating limit exceeded
-        if(heatingLimitHours > 0 && heatingHoursToday >= heatingLimitHours && heating) {
+        if(heatingLimitHours > 0 && heatingHoursToday >= heatingLimitHours && heating && sensorNode.isHeatingOn()) {
             notify(
-                    baseHeatingID + 10000, cooldownHeating,
+                    baseHeatingID + position + 200, cooldown,
                     "Heating limit exceeded",
-                    "Heating has run for " + heatingHoursToday + " of " + heatingLimitHours + " hours today"
+                    String.format("Heating has run for %.1fh of %.1fh today", heatingHoursToday, heatingLimitHours)
             );
         }
-        if(analysis.roomWarm && analysis.outsideWarm) {
+        if(analysis.roomWarm && analysis.outsideWarm && heating) {
             notify(
-                    baseHeatingID + 10000, cooldownHeating,
+                    baseHeatingID + position + 300, cooldown,
                     room + " is getting warm",
                     "Consider opening a window or turning on a fan"
             );
         }
-        if(analysis.roomCold) {
+        if(analysis.roomCold && heating) {
             notify(
-                    baseHeatingID + 10000, cooldownHeating,
+                    baseHeatingID + position + 400, cooldown,
                     room + " is getting cold",
                     "Consider closing a window or turning the heating on"
             );
@@ -133,14 +151,14 @@ public class HomeNotificationManager {
         // High humidity, room unventilated
         if(analysis.humidityHigh && humidity) {
             notify(
-                    baseHumidityID + position, cooldownHumidity,
+                    baseHumidityID + position, cooldown,
                     "High humidity in " + room,
                     "Consider opening a window or turning on a dehumidifier to prevent mould"
             );
         }
         // Low humidity, air is dry
         if(analysis.humidityLow && humidity) {
-            notify(baseHumidityID + position + 100, cooldownHumidity,
+            notify(baseHumidityID + position + 100, cooldown,
                     "Low humidity in " + room,
                     "The air is very dry; consider turning on a humidifier"
             );
@@ -148,7 +166,7 @@ public class HomeNotificationManager {
         // Lights left on in unoccupied room
         if(analysis.lightsLikelyOn && !analysis.likelyOccupied && lights) {
             notify(
-                    baseLightsID + position, cooldownLights,
+                    baseLightsID + position, cooldown,
                     "Lights left on in " + room,
                     "Lights appear to be on in an empty room; consider turning them off"
             );
@@ -156,7 +174,7 @@ public class HomeNotificationManager {
         // Lights are on but it is bright outside
         if(analysis.lightsUnnecessary && lights) {
             notify(
-                    baseLightsID + position + 100, cooldownLights,
+                    baseLightsID + position + 100, cooldown,
                     "Lights are on in " + room,
                     "It is quite bright outside; consider turning them off"
             );
@@ -164,14 +182,14 @@ public class HomeNotificationManager {
         // Dark in an occupied room during the day
         if(analysis.roomDarkDuringDay && lights) {
             notify(
-                    baseLightsID + position + 200, cooldownLights,
+                    baseLightsID + position + 200, cooldown,
                     "It's dark in " + room,
                     "It could be good to let some light in; consider opening the blinds"
             );
         }
         // Obstructed
         if(analysis.obstructed && lights) {
-            notify(baseLightsID + position + 300, cooldownLights,
+            notify(baseLightsID + position + 300, cooldown,
                     room + " node obstructed",
                     "Cannot read light level until unobstructed"
             );

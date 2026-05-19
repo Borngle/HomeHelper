@@ -13,4 +13,5 @@
     <string name="lights_title">Lights reminders</string>
     <string name="humidity_title">Humidity reminders</string>
     <string name="room">Room:</string>
+    <string name="comfort">Comfort</string>
 </resources>

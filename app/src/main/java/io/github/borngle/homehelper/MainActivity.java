@@ -52,8 +52,6 @@ public class MainActivity extends AppCompatActivity {
         // Test node
         SensorNodeRepository sensorNodeRepository = new SensorNodeRepository(this);
         sensorNodes = sensorNodeRepository.loadSensorNodes();
-        sensorNodes.clear();
-        sensorNodeRepository.saveSensorNodes(sensorNodes);
         if(sensorNodes.isEmpty()) { // Just for testing
             sensorNodes.add(new SensorNode("Living Room", ""));
             sensorNodeRepository.saveSensorNodes(sensorNodes);

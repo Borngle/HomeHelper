@@ -14,6 +14,8 @@ public class SensorNode {
     private boolean notifyHeating = true;
     private boolean notifyHumidity = true;
     private boolean notifyLights = true;
+    private boolean heatingOn = false;
+    private float idealTemperature = 21;
 
     public SensorNode(String room, String url) {
         this.room = room;
@@ -61,6 +63,14 @@ public class SensorNode {
         return notifyLights;
     }
 
+    public boolean isHeatingOn() {
+        return heatingOn;
+    }
+
+    public float getIdealTemperature() {
+        return idealTemperature;
+    }
+
     public void setRoom(String room) {
         this.room = room;
     }
@@ -99,5 +109,13 @@ public class SensorNode {
 
     public void setNotifyLights(boolean notifyLights) {
         this.notifyLights = notifyLights;
+    }
+
+    public void setHeatingOn(boolean heatingOn) {
+        this.heatingOn = heatingOn;
+    }
+
+    public void setIdealTemperature(float idealTemperature) {
+        this.idealTemperature = idealTemperature;
     }
 }
