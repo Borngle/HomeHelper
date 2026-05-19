@@ -49,7 +49,7 @@ public class HomeNotificationManager {
         this.notificationManagerCompat = NotificationManagerCompat.from(context);
     }
 
-    public void evaluate(SensorNode sensorNode, SensorNodeHistory sensorNodeHistory, int position, float outsideTemp, float outsideLux) {
+    public void evaluate(SensorNode sensorNode, SensorNodeHistory sensorNodeHistory, int position, float outsideTemperature, float outsideLux) {
         if(!sensorNode.isReachable() || sensorNodeHistory.getRecordings().size() < 10) {
             return;
         }
@@ -73,7 +73,7 @@ public class HomeNotificationManager {
                     .putLong("last_reset_day", lastResetDay)
                     .apply();
         }
-        RoomAnalyser.Analysis analysis = roomAnalyser.analyse(sensorNode, sensorNodeHistory, outsideTemp, outsideLux);
+        RoomAnalyser.Analysis analysis = roomAnalyser.analyse(sensorNode, sensorNodeHistory, outsideTemperature, outsideLux);
         sensorNode.setMotion(analysis.likelyOccupied);
         if(analysis.heatingLikelyOn) {
             long now = System.currentTimeMillis();
@@ -114,6 +114,20 @@ public class HomeNotificationManager {
                     baseHeatingID + 10000, cooldownHeating,
                     "Heating limit exceeded",
                     "Heating has run for " + heatingHoursToday + " of " + heatingLimitHours + " hours today"
+            );
+        }
+        if(analysis.roomWarm && analysis.outsideWarm) {
+            notify(
+                    baseHeatingID + 10000, cooldownHeating,
+                    room + " is getting warm",
+                    "Consider opening a window or turning on a fan"
+            );
+        }
+        if(analysis.roomCold) {
+            notify(
+                    baseHeatingID + 10000, cooldownHeating,
+                    room + " is getting cold",
+                    "Consider closing a window or turning the heating on"
             );
         }
         // High humidity, room unventilated

@@ -28,6 +28,7 @@ public class RoomAnalyser {
         public final boolean roomCold;
         public final boolean roomWarm;
         public final boolean heatingUnnecessary;
+        public final boolean outsideWarm;
         // Humidity
         public final boolean humidityHigh;
         public final boolean humidityLow;
@@ -38,13 +39,14 @@ public class RoomAnalyser {
         public final boolean obstructed;
 
         public Analysis(boolean likelyOccupied, boolean heatingLikelyOn, boolean roomCold, boolean roomWarm,
-                        boolean heatingUnnecessary, boolean humidityHigh, boolean humidityLow, boolean lightsLikelyOn,
+                        boolean heatingUnnecessary, boolean outsideWarm, boolean humidityHigh, boolean humidityLow, boolean lightsLikelyOn,
                         boolean roomDarkDuringDay, boolean lightsUnnecessary, boolean obstructed) {
             this.likelyOccupied = likelyOccupied;
             this.heatingLikelyOn = heatingLikelyOn;
             this.roomCold = roomCold;
             this.roomWarm = roomWarm;
             this.heatingUnnecessary = heatingUnnecessary;
+            this.outsideWarm = outsideWarm;
             this.humidityHigh = humidityHigh;
             this.humidityLow = humidityLow;
             this.lightsLikelyOn = lightsLikelyOn;
@@ -64,6 +66,7 @@ public class RoomAnalyser {
         boolean roomCold = sensorNode.getTemperature() < moderateOutsideTemperature && sensorNodeHistory.temperatureTrend() < 0;
         boolean roomWarm = sensorNode.getTemperature() > warmInsideTemperature && sensorNodeHistory.temperatureTrend() > 0;
         boolean heatingUnnecessary = heatingOn && outsideTemperature > moderateOutsideTemperature;
+        boolean outsideWarm = outsideTemperature > moderateOutsideTemperature;
         // Humidity
         boolean humidityHigh = sensorNodeHistory.averageHumidity() >= highHumidity || sensorNodeHistory.humidityTrend() > humidityDelta;
         boolean humidityLow = sensorNodeHistory.averageHumidity() <= lowHumidity; // Air is too dry
@@ -78,7 +81,7 @@ public class RoomAnalyser {
         boolean lightsUnnecessary = lightsOn && isBrightOutside;
         boolean obstructed = sensorNodeHistory.averageLux() <= 0 && !isDarkOutside
                 && sensorNodeHistory.getRecordings().size() >= 10;
-        return new Analysis(occupied, heatingOn, roomCold, roomWarm, heatingUnnecessary, humidityHigh,
+        return new Analysis(occupied, heatingOn, roomCold, roomWarm, heatingUnnecessary, outsideWarm, humidityHigh,
                 humidityLow, lightsOn, roomDarkDuringDay, lightsUnnecessary, obstructed);
     }
 }
