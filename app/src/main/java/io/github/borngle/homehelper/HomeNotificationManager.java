@@ -4,12 +4,15 @@ import android.Manifest;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 
 import androidx.core.app.ActivityCompat;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
+import androidx.preference.PreferenceManager;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -30,43 +33,89 @@ public class HomeNotificationManager {
 
     // (sensorNode index + notification ID) and its cooldown
     private final Map<Integer, Long> cooldowns = new HashMap<>();
+    private float heatingHoursToday = 0;
+    private long lastHeatingIncrement = 0;
+    private long lastResetDay = -1;
+
+    private final SharedPreferences sharedPreferences;
 
     public HomeNotificationManager(Context context) {
         this.context = context;
+        this.sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
+        heatingHoursToday = sharedPreferences.getFloat("heating_hours_today", 0);
+        lastHeatingIncrement = sharedPreferences.getLong("last_heating_increment", 0);
+        lastResetDay = sharedPreferences.getLong("last_reset_day", -1);
         this.notificationManagerCompat = NotificationManagerCompat.from(context);
     }
 
     public void evaluate(SensorNode sensorNode, SensorNodeHistory sensorNodeHistory, int position, float outsideTemp, float outsideLux) {
-        if(!sensorNode.isReachable()) {
+        if(!sensorNode.isReachable() || sensorNodeHistory.getRecordings().size() < 10) {
             return;
+        }
+        boolean globalHeating = !("Off").equals(sharedPreferences.getString("notify_heating_global", "On"));
+        boolean globalLights = !("Off").equals(sharedPreferences.getString("notify_lights_global", "On"));
+        boolean globalHumidity = !("Off").equals(sharedPreferences.getString("notify_humidity_global", "On"));
+        // Read heating limit (0 means disabled)
+        float heatingLimitHours = 0;
+        String raw = sharedPreferences.getString("heating_daily_limit_hours", "0");
+        float parsed = Float.parseFloat(raw);
+        if(parsed > 0) {
+            heatingLimitHours = parsed;
+        }
+        long today = java.util.concurrent.TimeUnit.MILLISECONDS.toDays(System.currentTimeMillis());
+        if(today != lastResetDay) {
+            heatingHoursToday = 0;
+            lastResetDay = today;
+            sharedPreferences.edit()
+                    .putFloat("heating_hours_today", heatingHoursToday)
+                    .putLong("last_heating_increment", lastHeatingIncrement)
+                    .putLong("last_reset_day", lastResetDay)
+                    .apply();
         }
         RoomAnalyser.Analysis analysis = roomAnalyser.analyse(sensorNode, sensorNodeHistory, outsideTemp, outsideLux);
-        String room = sensorNode.getRoom();
-        if(sensorNodeHistory.getRecordings().size() < 10) { // Minimum number of recordings
-            return;
+        if(analysis.heatingLikelyOn) {
+            long now = System.currentTimeMillis();
+            // Only increment once every 2 seconds globally
+            if(now - lastHeatingIncrement >= 2000) {
+                heatingHoursToday += ((float) 2 / 3600);
+                lastHeatingIncrement = now;
+                sharedPreferences.edit()
+                        .putFloat("heating_hours_today", heatingHoursToday)
+                        .putLong("last_heating_increment", lastHeatingIncrement)
+                        .putLong("last_reset_day", lastResetDay)
+                        .apply();
+            }
         }
+        String room = sensorNode.getRoom();
         // Lights left on in unoccupied room
-        if(analysis.lightsLikelyOn && !analysis.likelyOccupied) {
+        if(analysis.lightsLikelyOn && !analysis.likelyOccupied && sensorNode.getNotifyLights() && globalLights) {
             notify(
                     baseLightsID + position, cooldownLights,
-                    "Lights left on in" + room,
+                    "Lights left on in " + room,
                     "Lights appear to be on in an empty room"
             );
         }
         // TODO: Lights on and there is a lot of natural light already
 
         // Heating on in unoccupied room
-        if(analysis.heatingLikelyOn && !analysis.likelyOccupied) {
+        if(analysis.heatingLikelyOn && !analysis.likelyOccupied && sensorNode.getNotifyHeating() && globalHeating) {
             notify(
                     baseHeatingID + position, cooldownHeating,
                     "Heating on in " + room,
                     "Heating seems to be running in an empty room"
             );
         }
-        // TODO: Heating on past set limit
+        // Heating limit exceeded
+        if(heatingLimitHours > 0 && heatingHoursToday >= heatingLimitHours) {
+            notify(
+                    baseHeatingID + 10000, cooldownHeating,
+                    "Heating limit exceeded",
+                    "Heating has run for " + heatingHoursToday + " of " + heatingLimitHours + " hours today"
+            );
+        }
 
         // High humidity, room unventilated
-        if(analysis.humidityLikelyHigh) {
+        if(analysis.humidityLikelyHigh && sensorNode.getNotifyHumidity() && globalHumidity) {
             notify(
                     baseHumidityID + position, cooldownHumidity,
                     "High humidity in " + room,

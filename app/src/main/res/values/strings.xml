@@ -10,7 +10,7 @@
     <!-- Notification Preferences -->
     <string name="heating_limit">Heating limit</string>
     <string name="heating_title">Heating reminders</string>
-    <string name="light_title">Lights reminders</string>
-    <string name="ventilation_title">Ventilation reminders</string>
+    <string name="lights_title">Lights reminders</string>
+    <string name="humidity_title">Humidity reminders</string>
     <string name="room">Room:</string>
 </resources>

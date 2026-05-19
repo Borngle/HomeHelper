@@ -10,22 +10,22 @@
         <item>Off</item>
     </string-array>
 
-    <string-array name="light_entries">
+    <string-array name="lights_entries">
         <item>On</item>
         <item>Off</item>
     </string-array>
 
-    <string-array name="light_values">
+    <string-array name="lights_values">
         <item>On</item>
         <item>Off</item>
     </string-array>
 
-    <string-array name="ventilation_entries">
+    <string-array name="humidity_entries">
         <item>On</item>
         <item>Off</item>
     </string-array>
 
-    <string-array name="ventilation_values">
+    <string-array name="humidity_values">
         <item>On</item>
         <item>Off</item>
     </string-array>

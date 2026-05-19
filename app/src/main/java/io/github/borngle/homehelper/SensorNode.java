@@ -10,6 +10,11 @@ public class SensorNode {
     private boolean motion;
     private boolean reachable; // Failed requests
 
+    // Notifications
+    private boolean notifyHeating = true;
+    private boolean notifyHumidity = true;
+    private boolean notifyLights = true;
+
     public SensorNode(String room, String url) {
         this.room = room;
         this.url = url;
@@ -46,6 +51,16 @@ public class SensorNode {
         return reachable;
     }
 
+    public boolean getNotifyHeating() {
+        return notifyHeating;
+    }
+    public boolean getNotifyHumidity() {
+        return notifyHumidity;
+    }
+    public boolean getNotifyLights() {
+        return notifyLights;
+    }
+
     public void setRoom(String room) {
         this.room = room;
     }
@@ -72,5 +87,17 @@ public class SensorNode {
 
     public void setReachable(boolean reachable) {
         this.reachable = reachable;
+    }
+
+    public void setNotifyHeating(boolean notifyHeating) {
+        this.notifyHeating = notifyHeating;
+    }
+
+    public void setNotifyHumidity(boolean notifyHumidity) {
+        this.notifyHumidity = notifyHumidity;
+    }
+
+    public void setNotifyLights(boolean notifyLights) {
+        this.notifyLights = notifyLights;
     }
 }

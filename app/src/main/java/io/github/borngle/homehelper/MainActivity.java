@@ -59,6 +59,10 @@ public class MainActivity extends AppCompatActivity {
                 int position = result.getData().getIntExtra("position", -1);
                 String newRoom = result.getData().getStringExtra("room");
                 sensorNodes.get(position).setRoom(newRoom);
+                sensorNodes.get(position).setNotifyHeating(result.getData().getBooleanExtra("notifyHeating", true));
+                sensorNodes.get(position).setNotifyHumidity(result.getData().getBooleanExtra("notifyHumidity", true));
+                sensorNodes.get(position).setNotifyLights(result.getData().getBooleanExtra("notifyLights", true));
+                sensorNodeRepository.saveSensorNodes(sensorNodes);
                 adapter.notifyItemChanged(position);
             }
         });
@@ -66,6 +70,9 @@ public class MainActivity extends AppCompatActivity {
             Intent intent = new Intent(this, EditSensorNodeActivity.class);
             intent.putExtra("position", position);
             intent.putExtra("room", sensorNodes.get(position).getRoom());
+            intent.putExtra("notifyHeating", sensorNodes.get(position).getNotifyHeating());
+            intent.putExtra("notifyHumidity", sensorNodes.get(position).getNotifyHumidity());
+            intent.putExtra("notifyLights", sensorNodes.get(position).getNotifyLights());
             editSensorNodeLauncher.launch(intent);
         });
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main_container), (v, insets) -> {
