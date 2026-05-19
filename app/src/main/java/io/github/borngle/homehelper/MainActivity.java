@@ -18,6 +18,7 @@ import androidx.activity.EdgeToEdge;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.app.AppCompatDelegate;
 import androidx.core.app.ActivityCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
@@ -43,6 +44,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
+        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
         setContentView(R.layout.activity_main);
         MaterialToolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -50,6 +52,8 @@ public class MainActivity extends AppCompatActivity {
         // Test node
         SensorNodeRepository sensorNodeRepository = new SensorNodeRepository(this);
         sensorNodes = sensorNodeRepository.loadSensorNodes();
+        sensorNodes.clear();
+        sensorNodeRepository.saveSensorNodes(sensorNodes);
         if(sensorNodes.isEmpty()) { // Just for testing
             sensorNodes.add(new SensorNode("Living Room", ""));
             sensorNodeRepository.saveSensorNodes(sensorNodes);

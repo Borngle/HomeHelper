@@ -10,12 +10,16 @@ public class RoomAnalyser {
     private static final float temperatureAboveOutside = 3; // Room warmer than outside by this much
     private static final float moderateOutsideTemperature = 15;
     private static final float warmInsideTemperature = 25;
+
     private static final float highHumidity = 70; // Uncomfortable above this
     private static final float lowHumidity = 30; // Uncomfortable below this
     private static final float humidityDelta = 10; // Rise over the recording window
-    private static final float lightsOnLux = 80; // Lux above this means lights likely on
-    private static final float lightAboveOutsideLux = 50; // Artificial lights supplementing bright natural light
-    private static final float expectedNightLux = 10; // Outside this dark means night
+
+    private static final float lightsOnLux = 85; // Lux above this means lights likely on
+    private static final float darkRoomLux = 25; // Lux below this means room is dark
+    private static final float lightsDelta = 25; // Jump within recording suggests lights likely on
+    private static final float darkOutsideLux = 20;
+    private static final float brightOutsideLux = 5000;
 
     public static class Analysis {
         public final boolean likelyOccupied;
@@ -51,8 +55,6 @@ public class RoomAnalyser {
     }
 
     public Analysis analyse(SensorNode sensorNode, SensorNodeHistory sensorNodeHistory, float outsideTemperature, float outsideLux) {
-        float outsideLightStrength = Math.min(outsideLux / 1000, 1);
-        boolean isDay = outsideLightStrength > 0.3;
         // Occupancy
         boolean occupied = sensorNodeHistory.motionFraction() >= occupiedMotionFraction;
         // Heating
@@ -67,11 +69,14 @@ public class RoomAnalyser {
         boolean humidityLow = sensorNodeHistory.averageHumidity() <= lowHumidity; // Air is too dry
         // Lights
         float roomLux = sensorNodeHistory.averageLux();
-        boolean isDarkOutside = outsideLux <= expectedNightLux;
-        boolean lightsOn = (roomLux > lightsOnLux) && (roomLux > outsideLux * 0.05);
-        boolean roomDarkDuringDay = outsideLux > 200 && roomLux < (outsideLux * 0.05) && occupied;
-        boolean lightsUnnecessary = lightsOn && outsideLux > 500;
-        boolean obstructed = sensorNodeHistory.averageLux() <= 0 && outsideLux > expectedNightLux
+        float currentLux = sensorNode.getLux();
+        float luxTrend = sensorNodeHistory.luxTrend();
+        boolean isDarkOutside = outsideLux <= darkOutsideLux;
+        boolean isBrightOutside = outsideLux >= brightOutsideLux;
+        boolean lightsOn = (currentLux > lightsOnLux) && luxTrend >= lightsDelta; // Room fairly bright and trend is a spike
+        boolean roomDarkDuringDay = isBrightOutside && roomLux < darkRoomLux && occupied;
+        boolean lightsUnnecessary = lightsOn && isBrightOutside;
+        boolean obstructed = sensorNodeHistory.averageLux() <= 0 && !isDarkOutside
                 && sensorNodeHistory.getRecordings().size() >= 10;
         return new Analysis(occupied, heatingOn, roomCold, roomWarm, heatingUnnecessary, humidityHigh,
                 humidityLow, lightsOn, roomDarkDuringDay, lightsUnnecessary, obstructed);

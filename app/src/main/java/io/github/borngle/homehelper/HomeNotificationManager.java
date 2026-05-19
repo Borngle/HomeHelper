@@ -74,6 +74,7 @@ public class HomeNotificationManager {
                     .apply();
         }
         RoomAnalyser.Analysis analysis = roomAnalyser.analyse(sensorNode, sensorNodeHistory, outsideTemp, outsideLux);
+        sensorNode.setMotion(analysis.likelyOccupied);
         if(analysis.heatingLikelyOn) {
             long now = System.currentTimeMillis();
             // Only increment once every 2 seconds globally
@@ -134,7 +135,7 @@ public class HomeNotificationManager {
         if(analysis.lightsLikelyOn && !analysis.likelyOccupied && lights) {
             notify(
                     baseLightsID + position, cooldownLights,
-                    "Lights left on in" + room,
+                    "Lights left on in " + room,
                     "Lights appear to be on in an empty room; consider turning them off"
             );
         }

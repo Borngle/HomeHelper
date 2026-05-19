@@ -83,6 +83,28 @@ public class SensorNodeHistory {
         return sum / recordings.size();
     }
 
+    public float luxTrend() {
+        // Latest subtract oldest reading (positive means rising)
+        if(recordings.size() < 2) {
+            return 0;
+        }
+        Recording latest = recordings.peekLast();
+        Recording older = null;
+        int index = 0;
+        int targetIndex = recordings.size() - 2; // 4 seconds back (2 samples at 2 second intervals)
+        for(Recording recording : recordings) {
+            if(index == targetIndex) {
+                older = recording;
+                break;
+            }
+            index++;
+        }
+        if(older == null) {
+            return 0;
+        }
+        return latest.lux - older.lux;
+    }
+
     public float averageTemperature() {
         // Average temperature over the window
         if(recordings.isEmpty()) {
