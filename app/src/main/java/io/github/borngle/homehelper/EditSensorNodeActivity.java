@@ -13,6 +13,7 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 import com.google.android.material.appbar.MaterialToolbar;
+import com.google.android.material.materialswitch.MaterialSwitch;
 
 import java.util.ArrayList;
 
@@ -38,6 +39,12 @@ public class EditSensorNodeActivity extends AppCompatActivity {
         }
         EditText roomInput = findViewById(R.id.roomInput);
         roomInput.setText(room); // Existing name
+        MaterialSwitch switchHeating = findViewById(R.id.switchHeating);
+        MaterialSwitch switchHumidity = findViewById(R.id.switchHumidity);
+        MaterialSwitch switchLights = findViewById(R.id.switchLights);
+        switchHeating.setChecked(getIntent().getBooleanExtra("notifyHeating", true));
+        switchHumidity.setChecked(getIntent().getBooleanExtra("notifyHumidity", true));
+        switchLights.setChecked(getIntent().getBooleanExtra("notifyLights", true));
         findViewById(R.id.save).setOnClickListener(v -> {
             String newRoom = roomInput.getText().toString();
             if(newRoom.isEmpty()) {
@@ -52,6 +59,9 @@ public class EditSensorNodeActivity extends AppCompatActivity {
             Intent intent = new Intent();
             intent.putExtra("position", position);
             intent.putExtra("room", newRoom);
+            intent.putExtra("notifyHeating", sensorNodes.get(position).getNotifyHeating());
+            intent.putExtra("notifyHumidity", sensorNodes.get(position).getNotifyHumidity());
+            intent.putExtra("notifyLights", sensorNodes.get(position).getNotifyLights());
             setResult(RESULT_OK, intent);
             finish();
         });

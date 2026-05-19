@@ -1,6 +1,7 @@
 package io.github.borngle.homehelper;
 
 import android.os.Bundle;
+import android.text.InputType;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.ActionBar;
@@ -8,6 +9,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.preference.EditTextPreference;
 import androidx.preference.PreferenceFragmentCompat;
 
 import com.google.android.material.appbar.MaterialToolbar;
@@ -42,6 +44,22 @@ public class SettingsActivity extends AppCompatActivity {
         @Override
         public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
             setPreferencesFromResource(R.xml.root_preferences, rootKey);
+            EditTextPreference heatingLimit = findPreference("daily_heating_limit");
+            if(heatingLimit != null) {
+                heatingLimit.setOnBindEditTextListener(editText -> {
+                    editText.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
+                    editText.selectAll();
+                });
+                heatingLimit.setOnPreferenceChangeListener((preference, newValue) -> {
+                    try {
+                        float value = Float.parseFloat((String) newValue);
+                        return value >= 0 && value <= 24;
+                    }
+                    catch(NumberFormatException e) {
+                        return false;
+                    }
+                });
+            }
         }
     }
 }

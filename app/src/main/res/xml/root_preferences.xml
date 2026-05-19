@@ -1,31 +1,33 @@
 <PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <PreferenceCategory app:title="@string/notifications">
-
-        <!-- TODO: SELECTABLE TIME AMOUNT -->
+        <EditTextPreference
+            app:key="daily_heating_limit"
+            app:title="Daily heating limit"
+            app:defaultValue="0" />
 
         <ListPreference
             app:defaultValue="On"
             app:entries="@array/heating_entries"
             app:entryValues="@array/heating_values"
-            app:key="On"
+            app:key="notify_heating_global"
             app:title="@string/heating_title"
             app:useSimpleSummaryProvider="true" />
 
         <ListPreference
             app:defaultValue="On"
-            app:entries="@array/light_entries"
-            app:entryValues="@array/light_values"
-            app:key="On"
-            app:title="@string/light_title"
+            app:entries="@array/humidity_entries"
+            app:entryValues="@array/humidity_values"
+            app:key="notify_humidity_global"
+            app:title="@string/humidity_title"
             app:useSimpleSummaryProvider="true" />
 
         <ListPreference
             app:defaultValue="On"
-            app:entries="@array/ventilation_entries"
-            app:entryValues="@array/ventilation_values"
-            app:key="On"
-            app:title="@string/ventilation_title"
+            app:entries="@array/lights_entries"
+            app:entryValues="@array/lights_values"
+            app:key="notify_lights_global"
+            app:title="@string/lights_title"
             app:useSimpleSummaryProvider="true" />
 
     </PreferenceCategory>
