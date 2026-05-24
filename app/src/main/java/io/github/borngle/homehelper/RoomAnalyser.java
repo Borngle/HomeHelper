@@ -8,7 +8,7 @@ public class RoomAnalyser {
     private static final float temperatureAboveOutside = 3; // Room warmer than outside by this much
     private static final float moderateOutsideTemperature = 15;
     private static final float warmInsideTemperature = 25;
-    private static final float coldInsideTemperature = 17;
+    private static final float coldInsideTemperature = 16;
 
     private static final float highHumidity = 70; // Uncomfortable above this
     private static final float moderateHumidity = 55;
@@ -75,7 +75,7 @@ public class RoomAnalyser {
         boolean isDarkOutside = outsideLux <= darkOutsideLux;
         boolean isBrightOutside = outsideLux >= brightOutsideLux;
         boolean lightsOn = currentLux > lightsOnLux && (luxTrend >= lightsDelta || sensorNodeHistory.averageLux() > lightsOnLux); // Room fairly bright and trend is a spike
-        boolean roomDarkDuringDay = isBrightOutside && roomLux < darkRoomLux && occupied && sensorNodeHistory.luxTrend() >= 0;;
+        boolean roomDarkDuringDay = isBrightOutside && roomLux < darkRoomLux && occupied && sensorNodeHistory.luxTrend() >= 0;
         boolean lightsUnnecessary = lightsOn && isBrightOutside;
         boolean obstructed = sensorNodeHistory.averageLux() <= 0 && !isDarkOutside
                 && sensorNodeHistory.getRecordings().size() >= 10;
